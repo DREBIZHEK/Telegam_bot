@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "Q1Y2SP4XNZXiWyZ61vJhjQJGIpDcFVPpShC5xzY8D/4yjZkac6HZTdqS7c7Cgc4iTDVLsyI8ktozjDABI84BeA==",
+  "success": true,
+  "projectFilePath": "D:\\TelegramBot\\Telegam_bot\\Telegam_bot\\Telegam_bot.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\bogda\\.nuget\\packages\\jetbrains.annotations\\2021.3.0\\jetbrains.annotations.2021.3.0.nupkg.sha512",
+    "C:\\Users\\bogda\\.nuget\\packages\\newtonsoft.json\\12.0.2\\newtonsoft.json.12.0.2.nupkg.sha512",
+    "C:\\Users\\bogda\\.nuget\\packages\\system.threading.channels\\6.0.0\\system.threading.channels.6.0.0.nupkg.sha512",
+    "C:\\Users\\bogda\\.nuget\\packages\\telegram.bot\\17.0.0\\telegram.bot.17.0.0.nupkg.sha512",
+    "C:\\Users\\bogda\\.nuget\\packages\\telegram.bot.extensions.polling\\1.0.0\\telegram.bot.extensions.polling.1.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

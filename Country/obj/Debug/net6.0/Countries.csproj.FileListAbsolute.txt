@@ -1,0 +1,12 @@
+D:\TelegramBot\Telegam_bot\Country\bin\Debug\net6.0\Countries.deps.json
+D:\TelegramBot\Telegam_bot\Country\bin\Debug\net6.0\Countries.dll
+D:\TelegramBot\Telegam_bot\Country\bin\Debug\net6.0\ref\Countries.dll
+D:\TelegramBot\Telegam_bot\Country\bin\Debug\net6.0\Countries.pdb
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.GeneratedMSBuildEditorConfig.editorconfig
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.AssemblyInfoInputs.cache
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.AssemblyInfo.cs
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.csproj.CoreCompileInputs.cache
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.dll
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\ref\Countries.dll
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.pdb
+D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.csproj.AssemblyReference.cache
