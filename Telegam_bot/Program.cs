@@ -4,13 +4,71 @@ using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Driver;
 using Countries;
+
+var settings = MongoClientSettings.FromConnectionString("mongodb+srv://drebizhek:j9OTNg64WwUDsFND@userscoreboard.4vgxu.mongodb.net/myFirstDatabase?retryWrites=true&w=majority");
+settings.ServerApi = new ServerApi(ServerApiVersion.V1);
+var client = new MongoClient(settings);
+var database = client.GetDatabase("Scoreboard");
+var tgCollection = GetTgCollection(database);
+var dbCollection = GetDbCollection(database);
+string[] invalidNames = new string[] {" ", "", "/start", "🇷🇺", "🇬🇧", "Начать тест", "🏆Таблица Лидеров🏆", "Start test", "🏆Leaderboard🏆", "❌Закончить тест❌", "❌End test❌" };
+//var filter = new BsonDocument
+//{
+//    {"_id",123 }
+//};
+//using (var cursor = await dbCollection.FindAsync(filter))
+//{
+//    while (await cursor.MoveNextAsync())
+//    {
+//        var people = cursor.Current;
+//        foreach (var doc in people)
+//        {
+//            Console.WriteLine(doc["_id"]);
+//        }
+//    }
+//}
+
+
+
 
 var botClient = new TelegramBotClient("2133841858:AAEkskJ2uCrfQ1GL4NIYfHduGjcRMlweMec");
 var me = await botClient.GetMeAsync();
 Random rng = new Random();
 List<ValueTuple<long, Country>> countryList = new List<ValueTuple<long, Country>>();
-List<ValueTuple<long, string>> langList = new List<ValueTuple<long, string>>();
+List<ValueTuple<long, string, string>> langList = new List<ValueTuple<long, string, string>>();
+await RefreshLanglistAsync();
+
+async Task RefreshLanglistAsync()
+{
+    langList.Clear();
+    var filter = new BsonDocument();
+    using (var cursor = await dbCollection.FindAsync(filter))
+    {
+        while (await cursor.MoveNextAsync())
+        {
+            var people = cursor.Current;
+            foreach (var doc in people)
+            {
+                langList.Add(new ValueTuple<long, string, string>((long)doc["_id"], "ru", (string)doc["Name"]));
+            }
+        }
+    }
+}
+
+
+IMongoCollection<MongoDB.Bson.BsonDocument> GetDbCollection(IMongoDatabase? database)
+{
+    return database.GetCollection<BsonDocument>("Scoreboard");
+}
+IMongoCollection<TgUser> GetTgCollection(IMongoDatabase? database)
+{
+    return database.GetCollection<TgUser>("Scoreboard");
+}
 
 using var cts = new CancellationTokenSource();
 
@@ -18,6 +76,7 @@ ReplyKeyboardMarkup? GetMenuButtonsRU = new(new[]
 {
     new KeyboardButton[] { "🇷🇺", "🇬🇧" },
     new KeyboardButton[] { "Начать тест" },
+    new KeyboardButton[] { "🏆Таблица Лидеров🏆" },
 })
 {
     ResizeKeyboard = true
@@ -27,6 +86,7 @@ ReplyKeyboardMarkup? GetMenuButtonsEN = new(new[]
 {
     new KeyboardButton[] { "🇷🇺", "🇬🇧" },
     new KeyboardButton[] { "Start test" },
+    new KeyboardButton[] { "🏆Leaderboard🏆" },
 })
 {
     ResizeKeyboard = true
@@ -80,16 +140,30 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
     if (langList.Count != 0)
     {
-        IEnumerable<ValueTuple<long, string>> evens = langList.Where(item => item.Item1 == chatId);
+        IEnumerable<ValueTuple<long, string, string>> evens = langList.Where(item => item.Item1 == chatId);
         if (evens.Count() == 0)
         {
-            langList.Add(new ValueTuple<long, string>(chatId, "ru"));
+            Message sentMessage = await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: "Введите ваш ник/Enter your nickname",
+                        replyMarkup: new ReplyKeyboardRemove(),
+                        cancellationToken: cancellationToken);
+            Console.WriteLine(invalidNames.ToList().IndexOf(messageText));
+            langList.Add(new ValueTuple<long, string, string>(chatId, "ru", ""));
+            //Task.FromCanceled(cancellationToken);
         }
     }
     else
     {
 
-        langList.Add(new ValueTuple<long, string>(chatId, "ru"));
+        Message sentMessage = await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: "Введите ваш ник/Enter your nickname",
+                        replyMarkup: new ReplyKeyboardRemove(),
+                        cancellationToken: cancellationToken);
+        Console.WriteLine(invalidNames.ToList().FirstOrDefault(messageText));
+        langList.Add(new ValueTuple<long, string, string>(chatId, "ru", ""));
+        //Task.FromCanceled(cancellationToken);
     }
 
     Country? selectedCountry = countryList.Where(item => item.Item1 == chatId).ElementAt(0).Item2;
@@ -97,10 +171,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
     switch (messageText)
     {
         case "🇷🇺":
-            langList[langList.FindIndex(item => item.Item1 == chatId)] = (chatId, "ru");
+            langList[langList.FindIndex(item => item.Item1 == chatId)] = (chatId, "ru", langList[langList.FindIndex(item => item.Item1 == chatId)].Item3);
             break;
         case "🇬🇧":
-            langList[langList.FindIndex(item => item.Item1 == chatId)] = (chatId, "en");
+            langList[langList.FindIndex(item => item.Item1 == chatId)] = (chatId, "en", langList[langList.FindIndex(item => item.Item1 == chatId)].Item3);
             break;
         default:
             break;
@@ -110,10 +184,17 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         case "ru":
             switch (messageText)
             {
+                case "🏆Таблица Лидеров🏆":
+                    Message ladderSentMessage = await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: await GetLadderAsync(),
+                        replyMarkup: GetMenuButtonsRU,
+                        cancellationToken: cancellationToken);
+                    break;
                 case "❌Закончить тест❌":
                     Message sentMessage = await botClient.SendTextMessageAsync(
                         chatId: chatId,
-                        text: "Пока! Надеюсь поиграем еще!",
+                        text: $"Пока, {langList[langList.FindIndex(item => item.Item1 == chatId)].Item3}! Надеюсь поиграем еще!",
                         replyMarkup: GetMenuButtonsRU,
                         cancellationToken: cancellationToken);
                     break;
@@ -127,6 +208,57 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
                     GameRU(chatId, cts.Token);
                     break;
                 default:
+                    IEnumerable<ValueTuple<long, string, string>> evens = langList.Where(item => item.Item1 == chatId);
+                    if (evens.Count() == 0 || langList[langList.FindIndex(item => item.Item1 == chatId)].Item3 == "")
+                    {
+                        var i = 0;
+
+                        var filter = new BsonDocument
+                        {
+                            {"Name",messageText }
+                        };
+                        using (var cursor = await dbCollection.FindAsync(filter))
+                        {
+                            while (await cursor.MoveNextAsync())
+                            {
+                                var people = cursor.Current;
+                                foreach (var doc in people)
+                                {
+                                    i++;
+                                }
+                            }
+                        }
+
+                        if (i == 0)
+                        {
+                            var name = messageText;
+                            name = name.Trim(); 
+                            if (invalidNames.ToList().IndexOf(name)!=-1)
+                            {
+                                Message ErrorsentMessage = await botClient.SendTextMessageAsync(
+                                chatId: chatId,
+                                text: "Недопустимое имя",
+                                replyMarkup: new ReplyKeyboardRemove(),
+                                cancellationToken: cancellationToken);
+                                break;
+                            }
+                            langList.Remove(langList[langList.FindIndex(item => item.Item1 == chatId)]);
+                            langList.Add(new ValueTuple<long, string, string>(chatId, "ru", name));
+                            await tgCollection.InsertOneAsync(new TgUser(chatId, name, 0));
+                        }
+                        else
+                        {
+                            Message ErrorsentMessage = await botClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: "Такое имя уже существует",
+                            replyMarkup: new ReplyKeyboardRemove(),
+                            cancellationToken: cancellationToken);
+                            break;
+                        }
+
+
+                    }
+
                     var game = false;
                     for (int i = 0; i < Enum.GetNames(typeof(CountriesVariantListRU)).Length; i++)
                     {
@@ -147,10 +279,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
                     }
                     Message helloMessage = await botClient.SendTextMessageAsync(
                         chatId: chatId,
-                        text: "Давай поиграем!",
+                        text: $"{langList[langList.FindIndex(item => item.Item1 == chatId)].Item3}, давай поиграем!",
                         replyMarkup: GetMenuButtonsRU,
                         cancellationToken: cancellationToken);
-                    countryList[countryList.FindIndex(x=>x.Item1==chatId)] = (chatId, countriesList.countries[rng.Next(0, countriesList.countries.Length)]);
+                    countryList[countryList.FindIndex(x => x.Item1 == chatId)] = (chatId, countriesList.countries[rng.Next(0, countriesList.countries.Length)]);
                     selectedCountry = countryList.Where(item => item.Item1 == chatId).ElementAt(0).Item2;
                     break;
             }
@@ -158,10 +290,17 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         case "en":
             switch (messageText)
             {
+                case "🏆Leaderboard🏆":
+                    Message ladderSentMessage = await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: await GetLadderAsync(),
+                        replyMarkup: GetMenuButtonsEN,
+                        cancellationToken: cancellationToken);
+                    break;
                 case "❌End test❌":
                     Message sentMessage = await botClient.SendTextMessageAsync(
                         chatId: chatId,
-                        text: "Bye! Hopefully we'll play some more!",
+                        text: $"Bye, {langList[langList.FindIndex(item => item.Item1 == chatId)].Item3}! Hopefully we'll play some more!",
                         replyMarkup: GetMenuButtonsEN,
                         cancellationToken: cancellationToken);
                     break;
@@ -175,6 +314,57 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
                     GameEN(chatId, cts.Token);
                     break;
                 default:
+                    IEnumerable<ValueTuple<long, string, string>> evens = langList.Where(item => item.Item1 == chatId);
+                    if (evens.Count() == 0 || langList[langList.FindIndex(item => item.Item1 == chatId)].Item3 == "")
+                    {
+                        var i = 0;
+
+                        var filter = new BsonDocument
+                        {
+                            {"Name",messageText }
+                        };
+                        using (var cursor = await dbCollection.FindAsync(filter))
+                        {
+                            while (await cursor.MoveNextAsync())
+                            {
+                                var people = cursor.Current;
+                                foreach (var doc in people)
+                                {
+                                    i++;
+                                }
+                            }
+                        }
+
+                        if (i == 0)
+                        {
+                            var name = messageText;
+                            name = name.Trim();
+                            if (invalidNames.ToList().IndexOf(name) != -1)
+                            {
+                                Message ErrorsentMessage = await botClient.SendTextMessageAsync(
+                                chatId: chatId,
+                                text: "Invalid name",
+                                replyMarkup: new ReplyKeyboardRemove(),
+                                cancellationToken: cancellationToken);
+                                break;
+                            }
+                            langList.Remove(langList[langList.FindIndex(item => item.Item1 == chatId)]);
+                            langList.Add(new ValueTuple<long, string, string>(chatId, "ru", name));
+                            await tgCollection.InsertOneAsync(new TgUser(chatId, name, 0));
+                        }
+                        else
+                        {
+                            Message ErrorsentMessage = await botClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: "This name already exists",
+                            replyMarkup: new ReplyKeyboardRemove(),
+                            cancellationToken: cancellationToken);
+                            break;
+                        }
+
+
+                    }
+
                     var game = false;
                     for (int i = 0; i < Enum.GetNames(typeof(CountriesVariantListEN)).Length; i++)
                     {
@@ -195,7 +385,7 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
                     }
                     Message helloMessage = await botClient.SendTextMessageAsync(
                         chatId: chatId,
-                        text: "Let's play!",
+                        text: $"{langList[langList.FindIndex(item => item.Item1 == chatId)].Item3}, let's play!",
                         replyMarkup: GetMenuButtonsEN,
                         cancellationToken: cancellationToken);
                     countryList[countryList.FindIndex(x => x.Item1 == chatId)] = (chatId, countriesList.countries[rng.Next(0, countriesList.countries.Length)]);
@@ -217,6 +407,8 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
 
+            await UpdateScore(chatId, await GetScore(chatId) + 5);
+
             Message startTestingMessage = await botClient.SendTextMessageAsync(
             chatId: chatId,
             text: "Давай продолжим!",
@@ -228,8 +420,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             Message startTestingMessage = await botClient.SendTextMessageAsync(
             chatId: chatId,
             text: "Это неправильный ответ 😢, попробуй еще раз",
-            replyMarkup: GetChooseMenuRU(selectedCountry),
+            replyMarkup: GetChooseMenuRU(selectedCountry, chatId),
             cancellationToken: cancellationToken);
+
+            await UpdateScore(chatId, await GetScore(chatId) - 3);
             return false;
         }
     }
@@ -245,6 +439,8 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
 
+            await UpdateScore(chatId, await GetScore(chatId) + 5);
+
             Message startTestingMessage = await botClient.SendTextMessageAsync(
             chatId: chatId,
             text: "Let's continue!",
@@ -256,8 +452,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             Message startTestingMessage = await botClient.SendTextMessageAsync(
             chatId: chatId,
             text: "This is the wrong answer 😢, please try again",
-            replyMarkup: GetChooseMenuEN(selectedCountry),
+            replyMarkup: GetChooseMenuEN(selectedCountry, chatId),
             cancellationToken: cancellationToken);
+
+            await UpdateScore(chatId, await GetScore(chatId) - 3);
             return false;
         }
     }
@@ -271,7 +469,7 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
     chatId: chatId,
     photo: selectedCountry.url,
     caption: "Что это за страна?",
-    replyMarkup: GetChooseMenuRU(selectedCountry),
+    replyMarkup: GetChooseMenuRU(selectedCountry, chatId),
     cancellationToken: cancellationToken);
     }
 
@@ -284,8 +482,70 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         chatId: chatId,
         photo: selectedCountry.url,
         caption: "What country is it?",
-        replyMarkup: GetChooseMenuEN(selectedCountry),
+        replyMarkup: GetChooseMenuEN(selectedCountry, chatId),
         cancellationToken: cancellationToken);
+    }
+
+    async Task<string> GetLadderAsync()
+    {
+        var j = 1;
+        string ladder = "";
+        var score = new List<int?>();
+        var name = new List<string>();
+        var filter = new BsonDocument();
+        using (var cursor = await dbCollection.FindAsync(filter))
+        {
+            while (await cursor.MoveNextAsync())
+            {
+                var people = cursor.Current;
+                foreach (var doc in people)
+                {
+                    score.Add((int)doc["Score"]);
+                    name.Add((string)doc["Name"]);
+                }
+            }
+        }
+
+        string[,] array = new string[name.Count, score.Count];
+        while (score.Max() != null)
+        {
+            int? maxValue = score.Max();
+            int maxIndex = score.IndexOf(maxValue);
+            ladder += $"{j}. {name[maxIndex]}: 💎{maxValue}\n";
+            score.RemoveAt(maxIndex);
+            name.RemoveAt(maxIndex);
+            j++;
+        }
+        return ladder;
+    }
+
+    async Task UpdateScore(long chatId, int score)
+    {
+        await dbCollection.UpdateOneAsync(
+             new BsonDocument("_id", chatId),
+             new BsonDocument("$set", new BsonDocument("Score", score)));
+
+    }
+
+    async Task<int> GetScore(long chatId)
+    {
+        int score = 0;
+        var filter = new BsonDocument
+        {
+            {"_id",chatId }
+        };
+        using (var cursor = await dbCollection.FindAsync(filter))
+        {
+            while (await cursor.MoveNextAsync())
+            {
+                var people = cursor.Current;
+                foreach (var doc in people)
+                {
+                    score = (int)doc["Score"];
+                }
+            }
+        }
+        return score;
     }
 }
 
@@ -304,7 +564,7 @@ Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, Cancell
 }
 
 
-ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
+ReplyKeyboardMarkup? GetChooseMenuRU(Country country, long chatId)
 {
     Random rng = new Random();
     int random = rng.Next(1, 5);
@@ -358,6 +618,7 @@ ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListRU)).Length);
             ReplyKeyboardMarkup? GetChooseMenu1 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌Закончить тест❌" },
@@ -410,6 +671,7 @@ ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListRU)).Length);
             ReplyKeyboardMarkup? GetChooseMenu2 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌Закончить тест❌" },
@@ -462,6 +724,7 @@ ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListRU)).Length);
             ReplyKeyboardMarkup? GetChooseMenu3 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌Закончить тест❌" },
@@ -514,6 +777,7 @@ ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListRU)).Length);
             ReplyKeyboardMarkup? GetChooseMenu4 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌Закончить тест❌" },
@@ -525,6 +789,7 @@ ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
         default:
             ReplyKeyboardMarkup? GetChooseMenu = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌Закончить тест❌" },
@@ -533,10 +798,13 @@ ReplyKeyboardMarkup? GetChooseMenuRU(Country country)
                 ResizeKeyboard = true
             };
             return GetChooseMenu;
+
+
     }
 }
 
-ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
+
+ReplyKeyboardMarkup? GetChooseMenuEN(Country country, long chatId)
 {
     Random rng = new Random();
     int random = rng.Next(1, 5);
@@ -590,6 +858,7 @@ ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListEN)).Length);
             ReplyKeyboardMarkup? GetChooseMenu1 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌End test❌" },
@@ -642,6 +911,7 @@ ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListEN)).Length);
             ReplyKeyboardMarkup? GetChooseMenu2 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌End test❌" },
@@ -694,6 +964,7 @@ ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListEN)).Length);
             ReplyKeyboardMarkup? GetChooseMenu3 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌End test❌" },
@@ -746,6 +1017,7 @@ ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
             random = rng.Next(Enum.GetNames(typeof(CountriesVariantListEN)).Length);
             ReplyKeyboardMarkup? GetChooseMenu4 = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "❌End test❌" },
@@ -757,6 +1029,7 @@ ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
         default:
             ReplyKeyboardMarkup? GetChooseMenu = new(new[]
             {
+                new KeyboardButton[] {$"💎{GetScore(chatId).Result}" },
                 new KeyboardButton[] { choose1, choose2 },
                 new KeyboardButton[] { choose3, choose4 },
                 new KeyboardButton[] { "End test" },
@@ -768,6 +1041,26 @@ ReplyKeyboardMarkup? GetChooseMenuEN(Country country)
     }
 }
 
+async Task<int> GetScore(long chatId)
+{
+    int score = 0;
+    var filter = new BsonDocument
+        {
+            {"_id",chatId }
+        };
+    using (var cursor = await dbCollection.FindAsync(filter))
+    {
+        while (await cursor.MoveNextAsync())
+        {
+            var people = cursor.Current;
+            foreach (var doc in people)
+            {
+                score = (int)doc["Score"];
+            }
+        }
+    }
+    return score;
+}
 enum CountriesVariantListRU
 {
     Австралия,
@@ -1104,3 +1397,21 @@ enum CountriesVariantListEN
     Jamaica,
     Japan
 }
+
+
+class TgUser
+{
+    [BsonId]
+    public long chatId { get; set; }
+    public string Name { get; set; }
+    public int Score { get; set; }
+
+    public TgUser(long chatId, string name, int score)
+    {
+        this.chatId = chatId;
+        Name = name;
+        Score = score;
+    }
+
+}
+

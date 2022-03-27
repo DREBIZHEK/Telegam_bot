@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "PN54TA1Dh8i8TIUowAANOcJK4ZUnt22vhgzDB5AurApmt16LXkvzyJclw53vaLyDenCDCXIr/Z/5ZZpbCy6XQQ==",
+  "dgSpecHash": "yySWUO9e5xpH5Fx2qRPBL4KNgtqgZH7B6XLN5+kDuLCt0TKzuKXorkexvj4tCpnIEMjnSFQe46b+4IyEE63taw==",
   "success": true,
-  "projectFilePath": "D:\\TelegramBot\\Telegam_bot\\Country\\Countries.csproj",
+  "projectFilePath": "D:\\TgBot\\Country\\Countries.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

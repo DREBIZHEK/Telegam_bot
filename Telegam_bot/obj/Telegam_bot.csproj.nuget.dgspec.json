@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\TelegramBot\\Telegam_bot\\Telegam_bot\\Telegam_bot.csproj": {}
+    "D:\\TgBot\\Telegam_bot\\Telegam_bot.csproj": {}
   },
   "projects": {
-    "D:\\TelegramBot\\Telegam_bot\\Country\\Countries.csproj": {
+    "D:\\TgBot\\Country\\Countries.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\TelegramBot\\Telegam_bot\\Country\\Countries.csproj",
+        "projectUniqueName": "D:\\TgBot\\Country\\Countries.csproj",
         "projectName": "Countries",
-        "projectPath": "D:\\TelegramBot\\Telegam_bot\\Country\\Countries.csproj",
+        "projectPath": "D:\\TgBot\\Country\\Countries.csproj",
         "packagesPath": "C:\\Users\\bogda\\.nuget\\packages\\",
-        "outputPath": "D:\\TelegramBot\\Telegam_bot\\Country\\obj\\",
+        "outputPath": "D:\\TgBot\\Country\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -58,18 +58,18 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.201\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\TelegramBot\\Telegam_bot\\Telegam_bot\\Telegam_bot.csproj": {
+    "D:\\TgBot\\Telegam_bot\\Telegam_bot.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\TelegramBot\\Telegam_bot\\Telegam_bot\\Telegam_bot.csproj",
+        "projectUniqueName": "D:\\TgBot\\Telegam_bot\\Telegam_bot.csproj",
         "projectName": "Telegam_bot",
-        "projectPath": "D:\\TelegramBot\\Telegam_bot\\Telegam_bot\\Telegam_bot.csproj",
+        "projectPath": "D:\\TgBot\\Telegam_bot\\Telegam_bot.csproj",
         "packagesPath": "C:\\Users\\bogda\\.nuget\\packages\\",
-        "outputPath": "D:\\TelegramBot\\Telegam_bot\\Telegam_bot\\obj\\",
+        "outputPath": "D:\\TgBot\\Telegam_bot\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -90,8 +90,8 @@
           "net6.0": {
             "targetAlias": "net6.0",
             "projectReferences": {
-              "D:\\TelegramBot\\Telegam_bot\\Country\\Countries.csproj": {
-                "projectPath": "D:\\TelegramBot\\Telegam_bot\\Country\\Countries.csproj"
+              "D:\\TgBot\\Country\\Countries.csproj": {
+                "projectPath": "D:\\TgBot\\Country\\Countries.csproj"
               }
             }
           }
@@ -106,6 +106,18 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "MongoDB.Bson": {
+              "target": "Package",
+              "version": "[2.15.0, )"
+            },
+            "MongoDB.Driver": {
+              "target": "Package",
+              "version": "[2.15.0, )"
+            },
+            "MongoDB.Driver.Core": {
+              "target": "Package",
+              "version": "[2.15.0, )"
+            },
             "Telegram.Bot": {
               "target": "Package",
               "version": "[17.0.0, )"
@@ -130,7 +142,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.201\\RuntimeIdentifierGraph.json"
         }
       }
     }

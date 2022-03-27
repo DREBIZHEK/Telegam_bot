@@ -10,3 +10,15 @@ D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.dll
 D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\ref\Countries.dll
 D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.pdb
 D:\TelegramBot\Telegam_bot\Country\obj\Debug\net6.0\Countries.csproj.AssemblyReference.cache
+D:\TgBot\Country\bin\Debug\net6.0\Countries.deps.json
+D:\TgBot\Country\bin\Debug\net6.0\Countries.dll
+D:\TgBot\Country\bin\Debug\net6.0\Countries.pdb
+D:\TgBot\Country\obj\Debug\net6.0\Countries.csproj.AssemblyReference.cache
+D:\TgBot\Country\obj\Debug\net6.0\Countries.GeneratedMSBuildEditorConfig.editorconfig
+D:\TgBot\Country\obj\Debug\net6.0\Countries.AssemblyInfoInputs.cache
+D:\TgBot\Country\obj\Debug\net6.0\Countries.AssemblyInfo.cs
+D:\TgBot\Country\obj\Debug\net6.0\Countries.csproj.CoreCompileInputs.cache
+D:\TgBot\Country\obj\Debug\net6.0\Countries.dll
+D:\TgBot\Country\obj\Debug\net6.0\refint\Countries.dll
+D:\TgBot\Country\obj\Debug\net6.0\Countries.pdb
+D:\TgBot\Country\obj\Debug\net6.0\ref\Countries.dll
